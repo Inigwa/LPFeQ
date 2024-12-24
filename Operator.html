@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оператор</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="d-flex justify-content-center">
+        <a href="LfpReference.html" class="btn btn-primary">Справочник ЛПФ</a>
+        <a href="EquipmentReference.html" class="btn btn-secondary">Справочник техники</a>
+    </div>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Оператор: Управление техникой</h1>
+        <!---->
+        <!-- Управление техникой -->
+        <div class="card mb-4">
+            <div class="card-header">Добавить Технику</div>
+            <div class="card-body">
+                <form id="create-equipment-form">
+                    <div class="mb-3">
+                        <label for="equipmentRegNumber" class="form-label">Регистрационный номер</label>
+                        <input type="text" class="form-control" id="equipmentRegNumber" placeholder="Введите номер" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="equipmentOperatorName" class="form-label">Имя оператора</label>
+                        <input type="text" class="form-control" id="equipmentOperatorName" placeholder="Введите имя" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Добавить технику</button>
+                </form>
+
+                <ul class="list-group mt-3" id="equipment-list"></ul>
+            </div>
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+           // Запрос для отправки данных на сервер
+           async function sendRequest(data) {
+            const response = await fetch('ManagerRequests.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(data)
+            });
+            return response.json();
+        }
+                    // Создание Техники
+                    document.getElementById('create-equipment-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const data = {
+                action: 'create_equipment',
+                reg_number: document.getElementById('equipmentRegNumber').value,
+                operator_name: document.getElementById('equipmentOperatorName').value
+            };
+
+            const response = await sendRequest(data);
+
+            if (response.success) {
+                alert('Техника успешно создана!');
+                loadEquipmentList();
+                this.reset();
+            } else {
+                alert('Ошибка: ' + response.error);
+            }
+        });
+
+        // Загрузка списка Техники
+        async function loadEquipmentList() {
+            try {
+                const response = await fetch('EqulpmentLfpData.php');
+                const json = await response.json();
+
+                if (!json.success) {
+                    alert('Ошибка при загрузке списка техники: ' + json.error);
+                    return;
+                }
+
+                const list = document.getElementById('equipment-list');
+                list.innerHTML = '';
+
+                json.data.forEach(equipment => {
+                    const item = document.createElement('li');
+                    item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    item.innerHTML = `
+                        ${equipment.registration_number} - ${equipment.operator_name}
+                        <div>
+                            <button class="btn btn-sm btn-warning me-2" onclick="editEquipment(${equipment.eq_id})">Редактировать</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                alert('Ошибка при загрузке списка техники. Проверьте подключение.');
+            }
+        }
+
+        // Редактирование Техники
+        async function editEquipment(id) {
+            const regNumber = prompt('Введите новый регистрационный номер:');
+            const operatorName = prompt('Введите имя оператора:');
+
+            if (!regNumber || !operatorName) {
+                alert('Заполните регистрационный номер и имя оператора!');
+                return;
+            }
+
+            const data = {
+                action: 'edit_equipment',
+                id: id,
+                reg_number: regNumber,
+                operator_name: operatorName
+            };
+
+            const response = await sendRequest(data);
+
+            if (response.success) {
+                alert('Техника успешно обновлена!');
+                loadEquipmentList();
+            } else {
+                alert('Ошибка: ' + response.error);
+            }
+        }
+
+        // Загрузка данных при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEquipmentList();
+        });
+    </script>
+</body>
+</html>

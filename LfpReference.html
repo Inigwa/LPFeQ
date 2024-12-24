@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справочник ЛПФ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Справочник ЛПФ</h1>
+
+        <!-- Таблица с информацией о ЛПФ -->
+        <div class="card">
+            <div class="card-header">Список ЛПФ</div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Адрес</th>
+                            <th>График работы</th>
+                            <th>Связанная техника</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lpfTableBody">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        // Функция для загрузки данных через AJAX
+    function fetchLpfData() {
+        fetch('LpfEquipmentData.php')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Полученные данные:', data);  // Выводим ответ в консоль для отладки
+        if (data.success) {
+            renderLpfData(data.data);
+        } else {
+            console.error('Ошибка при получении данных:', data.error);
+        }
+    })
+    .catch(error => console.error('Ошибка при запросе:', error));
+}
+function renderLpfData(LpfData) {
+    const tableBody = document.getElementById('lpfTableBody');
+    tableBody.innerHTML = '';  // Очищаем текущие данные
+
+    LpfData.forEach(LPF => {
+        const row = document.createElement('tr');
+
+        const nameCell = document.createElement('td');
+        nameCell.textContent = LPF.lpf_name;
+
+        const adressCell = document.createElement('td');
+        adressCell.textContent = LPF.lpf_adress;
+
+        const scheduleCell = document.createElement('td');
+        scheduleCell.textContent = LPF.lpf_work_schedule;
+
+        const equipmentCell = document.createElement('td');
+        const equipmentList = document.createElement('ul');
+
+        // Преобразуем строку JSON в массив, если linked_lpf не пустой
+        let linkedEquipment = [];
+        if (LPF.linked_equipment && LPF.linked_equipment.length > 0) {
+            try {
+                // Преобразуем строку в массив
+                linkedEquipment = JSON.parse(LPF.linked_equipment);
+                console.log('Распарсеная техника:', linkedEquipment);  // Отладка для проверки структуры
+                
+                // Теперь распарсим каждый элемент массива, если это строка
+                linkedEquipment = linkedEquipment.map(item => JSON.parse(item));  // Преобразуем строки в объекты
+                console.log('Распарсеная техника (после второго парсинга):', linkedEquipment);  // Отладка
+
+            } catch (e) {
+                console.error('Ошибка при парсинге JSON:', e);
+            }
+        }
+
+        // Проверка на существование и вывод ЛПФ
+        if (Array.isArray(linkedEquipment) && linkedEquipment.length > 0) {
+            linkedEquipment.forEach(equipment => {
+                // Проверяем структуру каждого объекта ЛПФ
+                if (equipment.reg_number && equipment.operator_name) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${equipment.reg_number} (Имя оператора: ${equipment.operator_name})`;
+                    equipmentList.appendChild(listItem);
+                } else {
+                    console.error('Некорректные данные техники:', equipment);
+                    const listItem = document.createElement('li');
+                    listItem.textContent = 'Ошибка в данных техники';
+                    equipmentList.appendChild(listItem);
+                }
+            });
+        } else {
+            const listItem = document.createElement('li');
+            listItem.textContent = 'Нет привязанной техники';
+            equipmentList.appendChild(listItem);
+        }
+
+        equipmentCell.appendChild(equipmentList);
+        row.appendChild(nameCell);
+        row.appendChild(adressCell);
+        row.appendChild(scheduleCell);
+        row.appendChild(equipmentCell);
+
+        tableBody.appendChild(row);
+    });
+}
+
+        // Загружаем данные при загрузке страницы
+        window.onload = function() {  
+            fetchLpfData();
+        };
+    </script>
+</body>
+</html>

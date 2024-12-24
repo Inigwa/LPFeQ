@@ -1,0 +1,70 @@
+drop table ;
+
+create table LPF (
+	lpf_id serial primary key, 
+	lpf_name varchar(30) not null, 
+	lpf_adress varchar(50) not null, 
+	lpf_work_schedule varchar(20) null);
+	
+create table Equipment (
+	eq_id serial primary key, 
+	registration_number int not null, 
+	operator_name varchar(50) not null);
+	
+create table Equipment_lpf (
+	eq_id INT not null, 
+	lpf_id INT not null,
+	CONSTRAINT fk_eq_id FOREIGN KEY (eq_id) REFERENCES Equipment (eq_id) ON DELETE CASCADE,
+    CONSTRAINT fk_lpf_id FOREIGN KEY (lpf_id) REFERENCES LPF (lpf_id) ON DELETE CASCADE);
+
+-- Добавим ЛПФ
+INSERT INTO LPF (lpf_name, lpf_adress, lpf_work_schedule)
+VALUES 
+('ЛПФ-1', 'ул. Лесная, 10', '8:00-18:00'),
+('ЛПФ-2', 'ул. Полевая, 5', '9:00-17:00');
+
+-- Добавим технику
+INSERT INTO Equipment (registration_number, operator_name)
+VALUES 
+(12345, 'Иванов Иван'),
+(67890, 'Петров Петр');
+
+-- Свяжем ЛПФ с техникой
+INSERT INTO Equipment_lpf (eq_id, lpf_id)
+VALUES 
+(1, 1), -- Техника 1 связана с ЛПФ-1
+(2, 1), -- Техника 2 также связана с ЛПФ-1
+(1, 2); -- Техника 1 связана и с ЛПФ-2
+
+select * from LPF;
+
+select * from Equipment;
+
+select * from Equipment_lpf;
+
+
+SELECT 
+    LPF.lpf_name,
+    LPF.lpf_adress,
+    Equipment.registration_number,
+    Equipment.operator_name
+FROM 
+    Equipment_lpf
+JOIN 
+    LPF ON Equipment_lpf.lpf_id = LPF.lpf_id
+JOIN 
+    Equipment ON Equipment_lpf.eq_id = Equipment.eq_id;
+
+-- Вывести технику и ЛПФ, с которыми она связана
+SELECT 
+    Equipment.registration_number,
+    Equipment.operator_name,
+    LPF.lpf_name,
+    LPF.lpf_adress
+FROM 
+    Equipment_lpf
+JOIN 
+    Equipment ON Equipment_lpf.eq_id = Equipment.eq_id
+JOIN 
+    LPF ON Equipment_lpf.lpf_id = LPF.lpf_id;
+ 
